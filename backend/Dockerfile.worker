@@ -1,0 +1,14 @@
+FROM python:3.12-slim
+
+WORKDIR /app
+
+COPY worker_requirements.txt .
+RUN pip install --no-cache-dir -r worker_requirements.txt
+COPY worker.py .
+COPY app/config.py ./app/
+COPY app/__init__.py ./app/
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONPATH=/app
+
+CMD ["python", "worker.py"]

@@ -1,0 +1,5 @@
+redis==5.0.1
+pypdf==4.0.1
+google-generativeai==0.8.3
+mistralai>=1.2.0
+pydantic-settings==2.1.0
