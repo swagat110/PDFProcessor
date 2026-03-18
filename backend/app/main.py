@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import uuid
@@ -14,10 +15,22 @@ STREAM_DOCUMENTS = "documents:queue"
 KEY_DOCUMENT_IDS = "documents:ids"
 KEY_DOCUMENT_RESULT = "document:result:{}"
 
+REDIS_CONNECT_RETRIES = 10
+REDIS_CONNECT_DELAY = 2
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    app.state.redis = redis.from_url(settings.redis_url, decode_responses=True)
+    r = redis.from_url(settings.redis_url, decode_responses=True)
+    for attempt in range(1, REDIS_CONNECT_RETRIES + 1):
+        try:
+            await r.ping()
+            break
+        except (redis.ConnectionError, OSError) as e:
+            if attempt == REDIS_CONNECT_RETRIES:
+                raise RuntimeError(f"Could not connect to Redis at {settings.redis_url} after {REDIS_CONNECT_RETRIES} attempts") from e
+            await asyncio.sleep(REDIS_CONNECT_DELAY)
+    app.state.redis = r
     os.makedirs(settings.upload_dir, exist_ok=True)
     try:
         yield
